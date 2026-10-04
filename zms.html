@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吃星星变大</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #1a1a2e;
+            overflow: hidden;
+            position: relative;
+        }
+      #d {
+    width: 60px;
+    height: 60px;
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    touch-action: none;
+    z-index: 2;
+    background-image: url('my.gif');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border-radius: 12px; /* 不想要圆角就删掉 */
+        
+        }
+      #star {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+    z-index: 1;
+    /* 你的星星图片 */
+    background-image: url('star.gif');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+        }
+        #score {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">已吃：0 颗</div>
+    <div id="star"></div>
+    <div id="d"></div>
+
+    <script>
+        var d = document.getElementById('d');
+        var star = document.getElementById('star');
+        var scoreEl = document.getElementById('score');
+
+        // ====== 用最开始能用的 pointer 写法 ======
+        var startX = 0, startY = 0;
+        var originX = 0, originY = 0;
+        var dragging = false;
+
+        d.addEventListener('pointerdown', function (e) {
+            dragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            originX = d.offsetLeft;
+            originY = d.offsetTop;
+            d.setPointerCapture(e.pointerId);
+        });
+
+        d.addEventListener('pointermove', function (e) {
+            if (!dragging) return;
+            var dx = e.clientX - startX;
+            var dy = e.clientY - startY;
+            var newX = originX + dx;
+            var newY = originY + dy;
+
+            var maxX = window.innerWidth - d.offsetWidth;
+            var maxY = window.innerHeight - d.offsetHeight;
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > maxX) newX = maxX;
+            if (newY > maxY) newY = maxY;
+
+            d.style.left = newX + 'px';
+            d.style.top = newY + 'px';
+
+            checkEat();
+        });
+
+        d.addEventListener('pointerup', function () {
+            dragging = false;
+        });
+
+        d.addEventListener('pointercancel', function () {
+            dragging = false;
+        });
+
+        // ====== 星星逻辑 ======
+        var BASE_SIZE = 60;
+        var MAX_SCALE = 5;
+        var eaten = 0;
+        var finished = false;
+
+        function spawnStar() {
+            if (finished) return;
+            var pad = 20;
+            var maxX = window.innerWidth - 30 - pad;
+            var maxY = window.innerHeight - 30 - pad;
+            var x = pad + Math.random() * (maxX - pad);
+            var y = pad + Math.random() * (maxY - pad);
+            star.style.left = x + 'px';
+            star.style.top = y + 'px';
+            star.style.display = 'block';
+        }
+
+        function checkEat() {
+            if (finished) return;
+            if (star.style.display === 'none') return;
+
+            var a = d.getBoundingClientRect();
+            var b = star.getBoundingClientRect();
+
+            var hit = !(a.right < b.left || a.left > b.right ||
+                        a.bottom < b.top || a.top > b.bottom);
+
+            if (hit) {
+                star.style.display = 'none';
+                eaten++;
+                scoreEl.innerText = '已吃：' + eaten + ' 颗';
+                grow();
+                if (!finished) {
+                    setTimeout(spawnStar, 300);
+                }
+            }
+        }
+
+        function grow() {
+            var cur = d.offsetWidth;
+            var next = cur + BASE_SIZE * 0.5;
+            var maxSize = BASE_SIZE * MAX_SCALE;
+
+            if (next >= maxSize) {
+                next = maxSize;
+                finished = true;
+                star.style.display = 'none';
+                scoreEl.innerText = '已吃：' + eaten + ' 颗（已满级）';
+            }
+
+            var cx = d.offsetLeft + cur / 2;
+            var cy = d.offsetTop + cur / 2;
+
+            d.style.width = next + 'px';
+            d.style.height = next + 'px';
+
+            var nx = cx - next / 2;
+            var ny = cy - next / 2;
+
+            if (nx < 0) nx = 0;
+            if (ny < 0) ny = 0;
+            if (nx > window.innerWidth - next) nx = window.innerWidth - next;
+            if (ny > window.innerHeight - next) ny = window.innerHeight - next;
+
+            d.style.left = nx + 'px';
+            d.style.top = ny + 'px';
+        }
+
+        spawnStar();
+    </script>
+</body>
+</html>
