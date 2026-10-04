@@ -160,4 +160,57 @@
                         statusEl.innerText = '❌ 权限被拒绝';
                     }
                 }).catch(function (err) {
-                    statusEl.innerText = '❌ 出错：'
+                    statusEl.innerText = '❌ 出错：'+ err.message;
+                });
+            } else {
+                // 安卓
+                start();
+            }
+        });
+
+        // ---- 启动 ----
+        function start() {
+            started = true;
+            btn.innerText = '已开启';
+            btn.style.background = '#888';
+            statusEl.innerText = '✅ 倾斜手机控制方向';
+            window.addEventListener('devicemotion', onMotion);
+            requestAnimationFrame(loop);
+            spawnStar();
+        }
+
+        // ---- 重力数据 ----
+        function onMotion(e) {
+            var a = e.accelerationIncludingGravity;
+            if (!a) return;
+            gx = (a.x || 0) * SENS;
+            gy = -(a.y || 0) * SENS;
+        }
+
+        // ---- 主循环 ----
+        function loop() {
+            velX += gx;
+            velY += gy;
+            velX *= FRIC;
+            velY *= FRIC;
+            posX += velX;
+            posY += velY;
+
+            var maxX = window.innerWidth - d.offsetWidth;
+            var maxY = window.innerHeight - d.offsetHeight;
+
+            if (posX < 0) { posX = 0; velX = -velX * BOUNCE; }
+            if (posY < 0) { posY = 0; velY = -velY * BOUNCE; }
+            if (posX > maxX) { posX = maxX; velX = -velX * BOUNCE; }
+            if (posY > maxY) { posY = maxY; velY = -velY * BOUNCE; }
+
+            d.style.left = posX + 'px';
+            d.style.top = posY + 'px';
+
+            checkEat();
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>
+```
