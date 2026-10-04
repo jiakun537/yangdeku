@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试</title>
+</head>
+<body style="background:#222;color:#fff;font-family:sans-serif;padding:20px">
+    <h2 id="s1">第一步：等点击</h2>
+    <button id="b" style="padding:16px 32px;font-size:18px;margin-top:20px">
+        点我
+    </button>
+    <h2 id="s2" style="margin-top:40px">第二步：等重力</h2>
+    <script>
+        document.getElementById('b').onclick = function () {
+            document.getElementById('s1').innerText = '✅ 按钮能点';
+            document.getElementById('s1').style.color = '#0f0';
+
+            if (typeof DeviceMotionEvent === 'undefined') {
+                document.getElementById('s2').innerText = '❌ 浏览器不支持重力';
+                document.getElementById('s2').style.color = '#f00';
+                return;
+            }
+
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(function (r) {
+                    document.getElementById('s2').innerText = '权限结果：' + r;
+                    document.getElementById('s2').style.color = r === 'granted' ? '#0f0' : '#f00';
+                    if (r === 'granted') listen();
+                }).catch(function (e) {
+                    document.getElementById('s2').innerText = '请求失败：' + e.message;
+                    document.getElementById('s2').style.color = '#f00';
+                });
+            } else {
+                document.getElementById('s2').innerText = '安卓模式，开始监听...';
+                document.getElementById('s2').style.color = '#ff0';
+                listen();
+            }
+        };
+
+        function listen() {
+            window.addEventListener('devicemotion', function (e) {
+                var a = e.accelerationIncludingGravity;
+                if (!a) {
+                    document.getElementById('s2').innerText = '⚠️ 收到事件，但没数据';
+                    return;
+                }
+                document.getElementById('s2').innerText =
+                    '✅ x=' + Math.round(a.x) + ' y=' + Math.round(a.y) + ' z=' + Math.round(a.z);
+                document.getElementById('s2').style.color = '#0f0';
+            });
+        }
+    </script>
+</body>
+</html>
