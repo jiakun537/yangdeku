@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -71,7 +72,7 @@
     <div id="status">点击下方按钮开始</div>
     <div id="star"></div>
     <div id="d"></div>
-    <button id="btn">开始</button>
+    <button id="btn">开启重力感应</button>
 
     <script>
         var d = document.getElementById('d');
@@ -80,8 +81,8 @@
         var statusEl = document.getElementById('status');
         var btn = document.getElementById('btn');
 
-        var BASE = 60;       // 初始大小
-        var MAX_SCALE = 5;   // 最大 5 倍
+        var BASE = 60;
+        var MAX_SCALE = 5;
         var eaten = 0;
         var finished = false;
         var started = false;
@@ -94,7 +95,6 @@
         var FRIC = 0.98;
         var BOUNCE = 0.6;
 
-        // ---- 星星 ----
         function spawnStar() {
             if (finished) return;
             var pad = 20;
@@ -105,7 +105,6 @@
             star.style.display = 'block';
         }
 
-        // ---- 吃星星 ----
         function checkEat() {
             if (finished) return;
             if (star.style.display === 'none') return;
@@ -121,7 +120,6 @@
             }
         }
 
-        // ---- 变大 ----
         function grow() {
             var cur = d.offsetWidth;
             var next = cur + BASE * 0.5;
@@ -140,46 +138,37 @@
             posY = cy - next / 2;
         }
 
-        // ---- 按钮 ----
         btn.addEventListener('click', function () {
             if (started) return;
+            statusEl.innerText = '正在请求权限...';
 
             if (typeof DeviceMotionEvent === 'undefined') {
-                statusEl.innerText = '❌ 此浏览器不支持重力感应';
+                statusEl.innerText = '❌ 不支持重力感应';
                 return;
             }
 
-            statusEl.innerText = '正在请求权限...';
-
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                // iOS
-                DeviceMotionEvent.requestPermission().then(function (state) {
-                    if (state === 'granted') {
-                        start();
-                    } else {
-                        statusEl.innerText = '❌ 权限被拒绝';
-                    }
-                }).catch(function (err) {
-                    statusEl.innerText = '❌ 出错：'+ err.message;
+                DeviceMotionEvent.requestPermission().then(function (r) {
+                    if (r === 'granted') start();
+                    else statusEl.innerText = '❌ 权限被拒绝';
+                }).catch(function (e) {
+                    statusEl.innerText = '❌ 出错：' + e.message;
                 });
             } else {
-                // 安卓
                 start();
             }
         });
 
-        // ---- 启动 ----
         function start() {
             started = true;
             btn.innerText = '已开启';
             btn.style.background = '#888';
             statusEl.innerText = '✅ 倾斜手机控制方向';
             window.addEventListener('devicemotion', onMotion);
-            requestAnimationFrame(loop);
             spawnStar();
+            requestAnimationFrame(loop);
         }
 
-        // ---- 重力数据 ----
         function onMotion(e) {
             var a = e.accelerationIncludingGravity;
             if (!a) return;
@@ -187,7 +176,6 @@
             gy = -(a.y || 0) * SENS;
         }
 
-        // ---- 主循环 ----
         function loop() {
             velX += gx;
             velY += gy;
