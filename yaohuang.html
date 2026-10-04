@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>摇晃</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: #1a1a2e;
+            overflow: hidden;
+            position: relative;
+        }
+        #d {
+            width: 60px;
+            height: 60px;
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            z-index: 2;
+            background-image: url('miaomiao.gif');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+        #star {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            z-index: 1;
+            background-image: url('beike.gif');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+        #score {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+            z-index: 10;
+        }
+        #startBtn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 24px;
+            font-size: 15px;
+            border: none;
+            border-radius: 20px;
+            background: #07c160;
+            color: #fff;
+            z-index: 10;
+        }
+        #startBtn:active { background: #06ad56; }
+    </style>
+</head>
+<body>
+    <div id="score">已吃：0 颗</div>
+    <div id="star"></div>
+    <div id="d"></div>
+    <button id="startBtn">开启重力感应</button>
+
+    <script>
+        var d = document.getElementById('d');
+        var star = document.getElementById('star');
+        var scoreEl = document.getElementById('score');
+        var startBtn = document.getElementById('startBtn');
+
+        var BASE_SIZE = 60;
+        var MAX_SCALE = 5;
+        var eaten = 0;
+        var finished = false;
+
+        // 方块的位置和速度
+        var posX = 100;
+        var posY = 100;
+        var velX = 0;
+        var velY = 0;
+
+        // 重力加速度（由手机倾斜决定）
+        var gravityX = 0;
+        var gravityY = 0;
+
+        // 灵敏度：倾斜越大，加速度越大
+        var SENSITIVITY = 0.8;
+        // 摩擦：速度衰减，让物体不会一直加速
+        var FRICTION = 0.98;
+        // 弹性：撞墙反弹强度
+        var BOUNCE = 0.6;
+
+        var running = false;
+
+        // ====== 星星 ======
+        function spawnStar() {
+            if (finished) return;
+            var pad = 20;
+            var maxX = window.innerWidth - star.offsetWidth - pad;
+            var maxY = window.innerHeight - star.offsetHeight - pad;
+            var x = pad + Math.random() * (maxX - pad);
+            var y = pad + Math.random() * (maxY - pad);
+            star.style.left = x + 'px';
+            star.style.top = y + 'px';
+            star.style.display = 'block';
+        }
+
+        // ====== 碰撞检测 ======
+        function checkEat() {
+            if (finished) return;
+            if (star.style.display === 'none') return;
+
+            var a = d.getBoundingClientRect();
+            var b = star.getBoundingClientRect();
+
+            var hit = !(a.right < b.left || a.left > b.right ||
+                        a.bottom < b.top || a.top > b.bottom);
+
+            if (hit) {
+                star.style.display = 'none';
+                eaten++;
+                scoreEl.innerText = '已吃：' + eaten + ' 颗';
+                grow();
+                if (!finished) setTimeout(spawnStar, 300);
+            }
+        }
+
+        function grow() {
+            var cur = d.offsetWidth;
+            var next = cur + BASE_SIZE * 0.5;
+            var maxSize = BASE_SIZE * MAX_SCALE;
+
+            if (next >= maxSize) {
+                next = maxSize;
+                finished = true;
+                star.style.display = 'none';
+                scoreEl.innerText = '已吃：' + eaten + ' 颗（已满级）';
+            }
+
+            var cx = posX + cur / 2;
+            var cy = posY + cur / 2;
+
+            d.style.width = next + 'px';
+            d.style.height = next + 'px';
+
+            posX = cx - next / 2;
+            posY = cy - next / 2;
+        }
+      
+        startBtn.addEventListener('click', function () {
+            if (running) return;
+
+            if (typeof DeviceMotionEvent !== 'undefined' &&
+                typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(function (state) {
+                    if (state === 'granted') {
+                        enableMotion();
+                    } else {
+                        alert('没拿到权限');
+                    }
+                }).catch(function () {
+                    alert('开启失败');
+                });
+            } else if (typeof DeviceMotionEvent !== 'undefined') {
+                enableMotion();
+            } else {
+                alert('设备不支持重力感应，给我受着');
+            }
+       
